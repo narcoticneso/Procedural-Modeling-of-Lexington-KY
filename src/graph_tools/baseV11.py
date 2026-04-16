@@ -35,11 +35,11 @@ G = ox.graph_from_place("Lexington, Kentucky", network_type="drive")
 print(f"Nodes: {len(G.nodes)}")
 print(f"Edges: {len(G.edges)}")
 
-txt_export_path = Path(__file__).resolve().parent / "lexington_graph_export.txt"
+txt_export_path = Path(__file__).resolve().parents[2] / "data" / "raw" / "lexington_graph_export_final.txt"
 export_graph_to_txt(G, txt_export_path)
 print(f"Text export written to: {txt_export_path}")
 
-graphml_export_path = Path(__file__).resolve().parent / "lexington_graph.graphml"
+graphml_export_path = Path(__file__).resolve().parents[2] / "data" / "raw" / "lexington_graph.graphml"
 ox.save_graphml(G, graphml_export_path)
 print(f"GraphML export written to: {graphml_export_path}")
 

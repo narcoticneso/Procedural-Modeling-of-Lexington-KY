@@ -149,8 +149,8 @@ def plot_graph(graph: nx.DiGraph, title: str, output_path: Path | None = None) -
 
 
 def main() -> None:
-	export_path = Path(__file__).resolve().parent / "bowling_green_graph_export.txt"
-	output_path = Path(__file__).resolve().parent / "bowling_green_graph_plot.png"
+	export_path = Path(__file__).resolve().parents[2] / "data" / "raw" / "lexington_graph_export_final.txt"
+	output_path = Path(__file__).resolve().parents[2] / "data" / "raw" / "lexington_graph_plot.png"
 	graph = load_graph_from_export(export_path)
 
 	print(f"Loaded {graph.number_of_nodes()} nodes and {graph.number_of_edges()} edges")
