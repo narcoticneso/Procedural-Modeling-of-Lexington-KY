@@ -37,30 +37,29 @@ class Building:
     texture_tags: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
-
 BUILDING_TYPE_RULES = {
     "residential": {
         "types": ["house", "duplex", "apartment"],
         "styles": ["traditional", "suburban", "modern"],
-        "roofs": ["gable", "hip", "flat"],
+        "roofs": ["gable", "shed", "flat"],
         "ages": ["old", "mid", "new"],
     },
     "commercial": {
         "types": ["storefront", "office", "mixed_use"],
         "styles": ["modern", "main_street", "brick_commercial"],
-        "roofs": ["flat", "hip"],
+        "roofs": ["flat", "shed"],
         "ages": ["mid", "new"],
     },
     "industrial": {
         "types": ["warehouse", "factory"],
         "styles": ["industrial", "concrete", "metal"],
-        "roofs": ["flat", "gable"],
+        "roofs": ["flat", "shed", "gable"],
         "ages": ["old", "mid"],
     },
     "default": {
         "types": ["generic_building"],
         "styles": ["generic"],
-        "roofs": ["flat"],
+        "roofs": ["flat", "gable"],
         "ages": ["mid"],
     },
 }
