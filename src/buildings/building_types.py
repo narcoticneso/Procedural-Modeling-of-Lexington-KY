@@ -38,6 +38,12 @@ class Building:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 BUILDING_TYPE_RULES = {
+    "downtown": {
+        "types": ["office", "office", "mixed_use", "mixed_use", "tower"],
+        "styles": ["modern", "glass", "brick_commercial"],
+        "roofs": ["flat"],
+        "ages": ["mid", "new"],
+    },
     "residential": {
         "types": ["house", "duplex", "apartment"],
         "styles": ["traditional", "suburban", "modern"],

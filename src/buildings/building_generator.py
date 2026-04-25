@@ -1,9 +1,41 @@
 import json
+import math
 import random
 from pathlib import Path
 from typing import Iterable, List, Dict, Any
 
 from building_types import Lot, Building, BUILDING_TYPE_RULES
+
+# Approximate center of downtown Lexington (Main St / Vine St area)
+DOWNTOWN_CENTER = (-84.4956, 38.0406)
+
+# Distance thresholds in approximate kilometers
+DOWNTOWN_RADIUS_KM = 0.8
+COMMERCIAL_RADIUS_KM = 2.5
+
+# Max number of towers allowed in downtown (Lexington has ~4-5 tall buildings)
+MAX_DOWNTOWN_TOWERS = 4
+
+
+def _haversine_km(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
+    R = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (math.sin(dlat / 2) ** 2
+         + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2))
+         * math.sin(dlon / 2) ** 2)
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
+# Assigns a district based on distance from downtown Lexington
+def assign_district(centroid) -> str:
+    dist = _haversine_km(centroid[0], centroid[1],
+                         DOWNTOWN_CENTER[0], DOWNTOWN_CENTER[1])
+    if dist < DOWNTOWN_RADIUS_KM:
+        return "downtown"
+    if dist < COMMERCIAL_RADIUS_KM:
+        return "commercial"
+    return "residential"
 
 
 class BuildingGenerator:
@@ -22,7 +54,29 @@ class BuildingGenerator:
             if building is not None:
                 buildings.append(building)
 
+        self._enforce_downtown_limits(buildings)
         return buildings
+
+    # Cap the number of towers in downtown to match Lexington's skyline
+    def _enforce_downtown_limits(self, buildings: List[Building]) -> None:
+        downtown_towers = [
+            b for b in buildings
+            if b.building_type == "tower"
+            and (b.district == "downtown"
+                 or assign_district(b.footprint[0]) == "downtown")
+        ]
+
+        if len(downtown_towers) <= MAX_DOWNTOWN_TOWERS:
+            return
+
+        # Keep the tallest towers, demote the rest to office buildings
+        downtown_towers.sort(key=lambda b: b.height, reverse=True)
+        for b in downtown_towers[MAX_DOWNTOWN_TOWERS:]:
+            b.building_type = "office"
+            b.floors = self.rng.randint(3, 8)
+            b.height = round(b.floors * self._height_per_floor("office"), 2)
+            b.geometry_tags["extrude_height"] = b.height
+            b.geometry_tags["floors"] = b.floors
 
     # Generate single building based on one lot's data
     def generate_building_for_lot(self, lot: Lot) -> Building | None:
@@ -30,8 +84,8 @@ class BuildingGenerator:
         if not lot.road_access:
             return None
 
-        # Use district-based rules -- TODO going to add more on this later
-        district = lot.district or "default"
+        # Use district-based rules, assign from geo-position if not already set
+        district = lot.district or assign_district(lot.centroid)
         rules = BUILDING_TYPE_RULES.get(district, BUILDING_TYPE_RULES["default"])
 
         # Randomly choose building characteristics from rules
@@ -54,8 +108,8 @@ class BuildingGenerator:
             floors=floors,
             height=height,
             roof_type=roof_type,
-            footprint=self._create_placeholder_footprint(lot),
-            district=lot.district,
+            footprint=self._create_placeholder_footprint(lot, building_type),
+            district=district,
             geometry_tags={
                 "extrude_height": height,
                 "floors": floors,
@@ -79,6 +133,7 @@ class BuildingGenerator:
             "apartment": (3, 6),
             "storefront": (1, 2),
             "office": (3, 8),
+            "tower": (10, 30),
             "mixed_use": (2, 5),
             "warehouse": (1, 2),
             "factory": (1, 3),
@@ -95,6 +150,7 @@ class BuildingGenerator:
             "apartment": 3.1,
             "storefront": 4.0,
             "office": 3.8,
+            "tower": 3.8,
             "mixed_use": 3.5,
             "warehouse": 5.0,
             "factory": 4.5,
@@ -102,7 +158,7 @@ class BuildingGenerator:
         }.get(building_type, 3.0)
     
     # Creates building footprint by shrinking the lot polygon inward
-    def _create_placeholder_footprint(self, lot):
+    def _create_placeholder_footprint(self, lot, building_type: str = "generic_building"):
         """
         Shrink the lot polygon to create a building footprint.
         """
@@ -111,7 +167,7 @@ class BuildingGenerator:
         cx = sum(p[0] for p in polygon) / len(polygon)
         cy = sum(p[1] for p in polygon) / len(polygon)
 
-        shrink_factor = 0.7  # adjust this (0.5–0.9 works well)
+        shrink_factor = 0.9 if building_type == "tower" else 0.7  # adjust this (0.5–0.9 works well)
 
         new_poly = []
         for x, y in polygon:
