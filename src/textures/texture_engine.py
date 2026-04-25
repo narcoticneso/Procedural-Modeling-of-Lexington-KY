@@ -8,10 +8,13 @@ from textures.material_library import MaterialLibrary, LABEL_IDS
 from textures.uv_mapper import compute_uv
 
 ROOF_Z_THRESHOLD = 0.7
+GROUND_Z_THRESHOLD = 0.5
 
 
-def classify_face(normal: np.ndarray) -> str:
+def classify_face(normal: np.ndarray, avg_z: float) -> str:
     if normal[2] > ROOF_Z_THRESHOLD:
+        if avg_z < GROUND_Z_THRESHOLD:
+            return "floor"
         return "roof"
     if normal[2] < -ROOF_Z_THRESHOLD:
         return "floor"
@@ -57,12 +60,12 @@ class TextureEngine:
                 break
 
             normal = face_normals[face_idx]
-            label = classify_face(normal)
+            verts = points[indices]
+            avg_z = float(verts[:, 2].mean())
+            label = classify_face(normal, avg_z)
 
             if label == "floor":
                 continue
-
-            verts = points[indices]
             tile_scale = self.materials.get_tile_scale(label)
             uvs = compute_uv(verts, normal, tile_scale)
             label_id = self.materials.get_label_id(label)

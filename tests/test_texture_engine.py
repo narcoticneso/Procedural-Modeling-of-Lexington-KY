@@ -40,11 +40,12 @@ def test_material_lookup():
 def test_classify_face():
     from textures.texture_engine import classify_face
 
-    assert classify_face(np.array([0.0, 0.0, 1.0])) == "roof"
-    assert classify_face(np.array([0.0, 0.0, -1.0])) == "floor"
-    assert classify_face(np.array([1.0, 0.0, 0.0])) == "wall"
-    assert classify_face(np.array([0.0, 1.0, 0.0])) == "wall"
-    assert classify_face(np.array([0.7, 0.0, 0.5])) == "wall"
+    assert classify_face(np.array([0.0, 0.0, 1.0]), avg_z=10.0) == "roof"
+    assert classify_face(np.array([0.0, 0.0, 1.0]), avg_z=0.0) == "floor"
+    assert classify_face(np.array([0.0, 0.0, -1.0]), avg_z=10.0) == "floor"
+    assert classify_face(np.array([1.0, 0.0, 0.0]), avg_z=5.0) == "wall"
+    assert classify_face(np.array([0.0, 1.0, 0.0]), avg_z=5.0) == "wall"
+    assert classify_face(np.array([0.7, 0.0, 0.5]), avg_z=5.0) == "wall"
 
 
 def test_uv_mapping_quad():

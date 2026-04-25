@@ -63,6 +63,8 @@ def main() -> None:
     print(f"Total vertices: {len(buffers['positions'])}")
     print()
     print("Controls:")
+    print("  WASD       -> move camera")
+    print("  Q/E        -> move up/down")
     print("  Left-drag  -> orbit camera")
     print("  Right-drag -> pan camera")
     print("  Scroll     -> zoom")

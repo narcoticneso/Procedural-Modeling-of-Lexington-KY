@@ -7,6 +7,32 @@ import pyvista as pv
 Point2D = List[float]
 
 
+def _triangulate_polygon(points_3d: list) -> pv.PolyData:
+    n = len(points_3d)
+    if n < 3:
+        return pv.PolyData()
+
+    boundary = pv.PolyData(points_3d)
+    lines = []
+    for i in range(n):
+        lines.extend([2, i, (i + 1) % n])
+    boundary.lines = lines
+
+    try:
+        mesh = boundary.delaunay_2d(edge_source=boundary)
+        if mesh.n_cells > 0:
+            return mesh
+    except Exception:
+        pass
+
+    faces = [n] + list(range(n))
+    poly = pv.PolyData(points_3d, faces=faces)
+    try:
+        return poly.triangulate()
+    except Exception:
+        return pv.PolyData()
+
+
 # Returns the min/max bounds of the footprint
 def get_bounds(footprint: List[Point2D]) -> Tuple[float, float, float, float]:
     xs = [p[0] for p in footprint]
@@ -30,8 +56,7 @@ def make_flat_roof(
         return pv.PolyData()
 
     points = [[x, y, base_height] for x, y in footprint]
-    faces = [len(points)] + list(range(len(points)))
-    return pv.PolyData(points, faces=faces).triangulate()
+    return _triangulate_polygon(points)
 
 
 # Builds a simple gable roof from the actual top footprint
@@ -71,8 +96,7 @@ def make_gable_roof(
             z = base_height + roof_height * factor
             roof_points.append([x, y, z])
 
-    faces = [len(roof_points)] + list(range(len(roof_points)))
-    return pv.PolyData(roof_points, faces=faces).triangulate()
+    return _triangulate_polygon(roof_points)
 
 
 # Builds a shed roof from the actual top footprint
@@ -122,8 +146,7 @@ def make_shed_roof(
             z = base_height + roof_height * factor
             roof_points.append([x, y, z])
 
-    faces = [len(roof_points)] + list(range(len(roof_points)))
-    return pv.PolyData(roof_points, faces=faces).triangulate()
+    return _triangulate_polygon(roof_points)
 
 
 # Returns the proper roof mesh based on roof type

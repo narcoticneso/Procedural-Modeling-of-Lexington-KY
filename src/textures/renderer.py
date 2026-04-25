@@ -69,6 +69,9 @@ class CityRenderer(app.Canvas):
         self.program["u_ambient"] = np.array([0.25, 0.25, 0.3], dtype=np.float32)
         self.program["u_model"] = np.eye(4, dtype=np.float32)
 
+        self._keys_held: set = set()
+        self._move_timer = app.Timer(1 / 60, connect=self._on_move_tick, start=True)
+
         self._update_camera()
 
         gloo.set_state(depth_test=True, cull_face=False)
@@ -132,20 +135,51 @@ class CityRenderer(app.Canvas):
         self._update_camera()
         self.update()
 
+    def _on_move_tick(self, event) -> None:
+        if not self._keys_held:
+            return
+
+        move_speed = self.distance * 0.012
+        az = np.radians(self.azimuth)
+        forward = np.array([-np.sin(az), -np.cos(az), 0.0])
+        right = np.array([-np.cos(az), np.sin(az), 0.0])
+
+        if "W" in self._keys_held:
+            self.target += forward * move_speed
+        if "S" in self._keys_held:
+            self.target -= forward * move_speed
+        if "A" in self._keys_held:
+            self.target -= right * move_speed
+        if "D" in self._keys_held:
+            self.target += right * move_speed
+        if "Q" in self._keys_held:
+            self.target[2] += move_speed
+        if "E" in self._keys_held:
+            self.target[2] -= move_speed
+
+        self._update_camera()
+        self.update()
+
     def on_key_press(self, event) -> None:
-        if event.key == "R":
+        if event.key in ("W", "A", "S", "D", "Q", "E"):
+            self._keys_held.add(event.key)
+        elif event.key == "R":
             self.distance = 4000.0
             self.azimuth = 45.0
             self.elevation = 30.0
             self.target = np.array([0.0, 0.0, 0.0], dtype=np.float64)
+            self._update_camera()
+            self.update()
         elif event.key == "T":
             self.elevation = 89.0
             self.azimuth = 0.0
+            self._update_camera()
+            self.update()
         elif event.key == "I":
             self.elevation = 35.0
             self.azimuth = 45.0
-        else:
-            return
+            self._update_camera()
+            self.update()
 
-        self._update_camera()
-        self.update()
+    def on_key_release(self, event) -> None:
+        self._keys_held.discard(event.key)

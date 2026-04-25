@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Tuple
 
 import pyvista as pv
 
-from geometry.roof_builder import make_roof_mesh
+from geometry.roof_builder import make_roof_mesh, _triangulate_polygon
 
 # Spread the city out horizontally
 XY_SCALE = 15000.0
@@ -55,16 +55,7 @@ def footprint_to_surface(footprint: List[List[float]]) -> pv.PolyData:
         return pv.PolyData()
 
     points = [[x, y, 0.0] for x, y in footprint]
-    faces = [len(points)] + list(range(len(points)))
-
-    poly = pv.PolyData(points, faces=faces)
-
-    try:
-        poly = poly.triangulate()
-    except Exception:
-        pass
-
-    return poly
+    return _triangulate_polygon(points)
 
 
 # Creates one building mesh by extruding a footprint upward and optionally adding a roof
