@@ -11,21 +11,38 @@ Run the building stage to create `buildings.json` from the lots:
 python .\src\pipeline\run_building_stage.py
 ```
 
-### Step 2: Generate Geometry and Render
+### Step 2: Generate Geometry (PyVista preview)
 ```powershell
 python .\src\pipeline\run_geometry_stage.py
 ```
+This renders the city with flat solid colors using PyVista. Useful for verifying geometry is correct.
 
-  Controls (in viewer)
+Controls: R → reset camera, T → top-down view, I → isometric view
 
-  While the visualization window is open:
+### Step 3: Render with Texture Engine (Vispy/OpenGL)
+```powershell
+python .\src\pipeline\run_texture_stage.py
+```
+This runs the full texture engine pipeline: face classification, material assignment, UV mapping, procedural texture generation, and renders the city with custom GLSL shaders and Phong lighting.
 
-  R → reset camera
-  T → top-down view
-  I → isometric view
+Controls:
+- WASD → move camera
+- Q/E → move up/down
+- Left-drag → orbit camera
+- Right-drag → pan camera
+- Scroll → zoom
+- R → reset camera
+- T → top-down view
+- I → isometric view
+
+### Step 4: Demo Flythrough (optional)
+```powershell
+python .\src\pipeline\run_demo_flythrough.py
+```
+Automated camera flythrough for recording demos. Space to pause/resume, R to restart.
 
 ## Pipeline Structure
-Roads → Lots → Buildings → (Geometry / Rendering)
+Roads → Lots → Buildings → Geometry/Mesh Building → Texture Engine & Rendering
 
 ## Building Generation Files
 
@@ -51,6 +68,35 @@ Implements the procedural roof generation logic. Based on the roof_type assigned
 
 ### `src/pipeline/run_geometry_stage.py`
 Runs the full geometry pipeline. It loads buildings.json and lots.json, generates the 3D building meshes (including roofs), and creates a ground texture by rendering all roads and lot outlines into a single image. The script then renders the final scene with buildings on top of the textured ground and outputs both a mesh file and a screenshot.
+
+## Texture Engine Files
+
+### `src/textures/texture_engine.py`
+Main texture engine class. Takes PyVista meshes from the geometry stage, classifies each triangle face by its surface normal (upward = roof, downward = floor, sideways = wall), assigns materials based on building type, generates UV coordinates, and outputs combined render-ready GPU buffers (positions, normals, UVs, label IDs).
+
+### `src/textures/material_library.py`
+Maps face label strings to material properties (color, tile scale, specular value, texture key). Includes `WALL_LABEL_BY_TYPE` which assigns different wall textures by building type: brick for residential, concrete panels for commercial, glass curtain wall for towers.
+
+### `src/textures/procedural.py`
+Algorithmic texture generators that produce RGBA uint8 numpy arrays. Generates brick (mortar grid + staggered rows + noise), concrete (gray + noise + panel seams), roof tiles (overlapping rows with gradient), wall concrete (panel seams), and wall glass (blue-tinted with dark grid frame). No external image files are used.
+
+### `src/textures/uv_mapper.py`
+Planar projection UV coordinate generator. Picks the two axes most perpendicular to the face normal, maps vertex positions to UV space, and scales by tile size so textures repeat at a consistent real-world scale regardless of face size.
+
+### `src/textures/renderer.py`
+Custom Vispy/OpenGL renderer. Uses `vispy.gloo` for direct OpenGL access with hand-written GLSL shaders. Packs all city geometry into a single vertex buffer for one draw call. Includes WASD camera movement at 60fps, mouse orbit/pan, and scroll zoom.
+
+### `shaders/vertex.glsl` and `shaders/fragment.glsl`
+GLSL shaders for the rendering pipeline. The vertex shader transforms positions and passes normals, UV coordinates, and face label IDs to the fragment shader. The fragment shader selects one of 7 texture samplers based on the label ID and applies Phong illumination (ambient + diffuse + specular) with per-material specular intensity.
+
+### `src/pipeline/run_texture_stage.py`
+Runs the full texture engine pipeline: loads buildings, builds meshes, processes them through the texture engine, generates procedural textures, and launches the Vispy renderer.
+
+### `src/pipeline/run_demo_flythrough.py`
+Automated camera flythrough with keyframe interpolation and smoothstep easing for presentation demo recording.
+
+### `tests/test_texture_engine.py`
+Test suite covering imports, label IDs, material lookup, face classification (including building-type-aware wall assignment), UV mapping, procedural texture generation, and ground quad construction.
 
 ## Lots / Buildings Output Example
 
