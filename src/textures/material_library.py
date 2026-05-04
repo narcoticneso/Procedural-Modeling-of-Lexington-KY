@@ -3,11 +3,13 @@ from __future__ import annotations
 from typing import Dict, Any, List
 
 LABEL_IDS = {
-    "wall":   0,
-    "roof":   1,
-    "window": 2,
-    "door":   3,
-    "ground": 4,
+    "wall":          0,
+    "roof":          1,
+    "window":        2,
+    "door":          3,
+    "ground":        4,
+    "wall_concrete": 5,
+    "wall_glass":    6,
 }
 
 MATERIALS: Dict[str, Dict[str, Any]] = {
@@ -41,6 +43,31 @@ MATERIALS: Dict[str, Dict[str, Any]] = {
         "specular": 0.0,
         "texture_key": "concrete",
     },
+    "wall_concrete": {
+        "color": [0.72, 0.70, 0.68, 1.0],
+        "tile_scale": 3.0,
+        "specular": 0.05,
+        "texture_key": "wall_concrete",
+    },
+    "wall_glass": {
+        "color": [0.45, 0.55, 0.70, 1.0],
+        "tile_scale": 4.0,
+        "specular": 0.6,
+        "texture_key": "wall_glass",
+    },
+}
+
+WALL_LABEL_BY_TYPE = {
+    "house": "wall",
+    "duplex": "wall",
+    "apartment": "wall",
+    "storefront": "wall_concrete",
+    "office": "wall_concrete",
+    "mixed_use": "wall_concrete",
+    "tower": "wall_glass",
+    "warehouse": "wall_concrete",
+    "factory": "wall_concrete",
+    "generic_building": "wall",
 }
 
 _FALLBACK_MATERIAL: Dict[str, Any] = {

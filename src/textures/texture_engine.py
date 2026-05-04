@@ -4,21 +4,21 @@ import numpy as np
 import pyvista as pv
 from typing import List, Dict, Any, Tuple, Optional
 
-from textures.material_library import MaterialLibrary, LABEL_IDS
+from textures.material_library import MaterialLibrary, LABEL_IDS, WALL_LABEL_BY_TYPE
 from textures.uv_mapper import compute_uv
 
 ROOF_Z_THRESHOLD = 0.7
 GROUND_Z_THRESHOLD = 0.5
 
 
-def classify_face(normal: np.ndarray, avg_z: float) -> str:
+def classify_face(normal: np.ndarray, avg_z: float, building_type: str = "") -> str:
     if normal[2] > ROOF_Z_THRESHOLD:
         if avg_z < GROUND_Z_THRESHOLD:
             return "floor"
         return "roof"
     if normal[2] < -ROOF_Z_THRESHOLD:
         return "floor"
-    return "wall"
+    return WALL_LABEL_BY_TYPE.get(building_type, "wall")
 
 
 def _parse_triangles(faces_array: np.ndarray) -> List[np.ndarray]:
@@ -62,7 +62,8 @@ class TextureEngine:
             normal = face_normals[face_idx]
             verts = points[indices]
             avg_z = float(verts[:, 2].mean())
-            label = classify_face(normal, avg_z)
+            building_type = building.get("building_type", "")
+            label = classify_face(normal, avg_z, building_type)
 
             if label == "floor":
                 continue

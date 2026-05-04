@@ -91,3 +91,64 @@ def generate_roof_tiles(width: int = 256, height: int = 256) -> np.ndarray:
         img[:, :, c] = np.clip(channel, 0, 255).astype(np.uint8)
 
     return img
+
+
+def generate_wall_concrete(width: int = 256, height: int = 256) -> np.ndarray:
+    img = np.zeros((height, width, 4), dtype=np.uint8)
+
+    rng = np.random.default_rng(3)
+    noise = rng.integers(-12, 12, (height, width), dtype=np.int16)
+
+    img[:, :, 0] = np.clip(175 + noise, 0, 255).astype(np.uint8)
+    img[:, :, 1] = np.clip(170 + noise, 0, 255).astype(np.uint8)
+    img[:, :, 2] = np.clip(165 + noise, 0, 255).astype(np.uint8)
+    img[:, :, 3] = 255
+
+    panel_h = height // 4
+    seam_t = max(1, height // 128)
+    for row in range(5):
+        y = row * panel_h
+        for t in range(seam_t):
+            if y + t < height:
+                img[y + t, :, 0] = 140
+                img[y + t, :, 1] = 135
+                img[y + t, :, 2] = 130
+
+    return img
+
+
+def generate_wall_glass(width: int = 256, height: int = 256) -> np.ndarray:
+    img = np.zeros((height, width, 4), dtype=np.uint8)
+
+    img[:, :, 0] = 100
+    img[:, :, 1] = 130
+    img[:, :, 2] = 160
+    img[:, :, 3] = 255
+
+    panel_h = height // 6
+    panel_w = width // 4
+    frame_t = max(2, height // 64)
+
+    for row in range(7):
+        y = row * panel_h
+        for t in range(frame_t):
+            if y + t < height:
+                img[y + t, :, 0] = 60
+                img[y + t, :, 1] = 65
+                img[y + t, :, 2] = 75
+
+    for col in range(5):
+        x = col * panel_w
+        for t in range(frame_t):
+            if x + t < width:
+                img[:, x + t, 0] = 60
+                img[:, x + t, 1] = 65
+                img[:, x + t, 2] = 75
+
+    rng = np.random.default_rng(4)
+    noise = rng.integers(-8, 8, (height, width), dtype=np.int16)
+    for c in range(3):
+        channel = img[:, :, c].astype(np.int16) + noise
+        img[:, :, c] = np.clip(channel, 0, 255).astype(np.uint8)
+
+    return img

@@ -3,6 +3,8 @@ uniform sampler2D u_tex_roof;
 uniform sampler2D u_tex_window;
 uniform sampler2D u_tex_door;
 uniform sampler2D u_tex_ground;
+uniform sampler2D u_tex_wall_concrete;
+uniform sampler2D u_tex_wall_glass;
 
 uniform vec3 u_light_dir;
 uniform vec3 u_light_color;
@@ -35,6 +37,12 @@ void main() {
     } else if (label == 4) {
         tex_color = texture2D(u_tex_ground, v_texcoord);
         specular_strength = 0.0;
+    } else if (label == 5) {
+        tex_color = texture2D(u_tex_wall_concrete, v_texcoord);
+        specular_strength = 0.05;
+    } else if (label == 6) {
+        tex_color = texture2D(u_tex_wall_glass, v_texcoord);
+        specular_strength = 0.6;
     } else {
         tex_color = vec4(1.0, 0.0, 1.0, 1.0);
         specular_strength = 0.0;

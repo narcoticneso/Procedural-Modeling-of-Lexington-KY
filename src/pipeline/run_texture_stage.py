@@ -8,7 +8,10 @@ from vispy import app
 
 from geometry.mesh_builder import load_buildings_json, build_all_meshes, XY_SCALE
 from textures.texture_engine import TextureEngine
-from textures.procedural import generate_brick, generate_concrete, generate_roof_tiles
+from textures.procedural import (
+    generate_brick, generate_concrete, generate_roof_tiles,
+    generate_wall_concrete, generate_wall_glass,
+)
 from textures.renderer import CityRenderer
 
 
@@ -57,6 +60,8 @@ def main() -> None:
         "window": generate_concrete(256, 256),
         "door": generate_concrete(256, 256),
         "ground": generate_concrete(),
+        "wall_concrete": generate_wall_concrete(),
+        "wall_glass": generate_wall_glass(),
     }
 
     print(f"Processed {len(mesh_pairs)} buildings")

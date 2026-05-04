@@ -10,7 +10,10 @@ import pytest
 def test_imports():
     from textures.material_library import MaterialLibrary, LABEL_IDS
     from textures.uv_mapper import compute_uv
-    from textures.procedural import generate_brick, generate_concrete, generate_roof_tiles
+    from textures.procedural import (
+        generate_brick, generate_concrete, generate_roof_tiles,
+        generate_wall_concrete, generate_wall_glass,
+    )
     from textures.texture_engine import TextureEngine, classify_face
 
 
@@ -22,6 +25,8 @@ def test_label_ids():
     assert LABEL_IDS["window"] == 2
     assert LABEL_IDS["door"] == 3
     assert LABEL_IDS["ground"] == 4
+    assert LABEL_IDS["wall_concrete"] == 5
+    assert LABEL_IDS["wall_glass"] == 6
 
 
 def test_material_lookup():
@@ -47,6 +52,10 @@ def test_classify_face():
     assert classify_face(np.array([0.0, 1.0, 0.0]), avg_z=5.0) == "wall"
     assert classify_face(np.array([0.7, 0.0, 0.5]), avg_z=5.0) == "wall"
 
+    assert classify_face(np.array([1.0, 0.0, 0.0]), avg_z=5.0, building_type="office") == "wall_concrete"
+    assert classify_face(np.array([1.0, 0.0, 0.0]), avg_z=5.0, building_type="tower") == "wall_glass"
+    assert classify_face(np.array([1.0, 0.0, 0.0]), avg_z=5.0, building_type="house") == "wall"
+
 
 def test_uv_mapping_quad():
     from textures.uv_mapper import compute_uv
@@ -66,9 +75,13 @@ def test_uv_mapping_quad():
 
 
 def test_procedural_textures():
-    from textures.procedural import generate_brick, generate_concrete, generate_roof_tiles
+    from textures.procedural import (
+        generate_brick, generate_concrete, generate_roof_tiles,
+        generate_wall_concrete, generate_wall_glass,
+    )
 
-    for gen in [generate_brick, generate_concrete, generate_roof_tiles]:
+    for gen in [generate_brick, generate_concrete, generate_roof_tiles,
+                generate_wall_concrete, generate_wall_glass]:
         img = gen(128, 128)
         assert img.shape == (128, 128, 4)
         assert img.dtype == np.uint8
