@@ -3,7 +3,48 @@
 ## Overview
 This project generates a procedural city model of Lexington, KY. The system has a pipeline approach with stages that contribute to building a complete urban environment.
 
+### Full Pipeline Runner
+`src/pipeline/run_full_pipeline.py`
+
+Runs the stages in order:
+
+1. Roads
+2. Lots
+3. Buildings
+4. Texture engine
+5. Building visualization
+
+### Main Libraries Used
+
+- `numpy`
+- `pandas`
+- `networkx`
+- `matplotlib`
+- `requests`
+- `geopandas`
+- `pyogrio`
+- `shapely`
+- `pyproj`
+- `osmnx`
+- `gdal`
+- `pyvista`
+- `vispy`
+- `seamless-3dep`
+
+
 ## Instructions to Build and Render the City
+
+### Step 1. Fetch Fayette GIS Data
+
+```bash
+python3 src/graph_tools/fetch_fayette_gis.py
+```
+
+This creates:
+
+- `data/raw/gis/fayette_population.geojson`
+- `data/raw/gis/fayette_hydro.geojson`
+- `data/raw/gis/fayette_dem.asc`
 
 ### Step 1: Generate Buildings
 Run the building stage to create `buildings.json` from the lots:
@@ -11,7 +52,48 @@ Run the building stage to create `buildings.json` from the lots:
 python .\src\pipeline\run_building_stage.py
 ```
 
-### Step 2: Generate Geometry (PyVista preview)
+### Step 2. Generate Roads
+
+#### Default road generation
+
+```bash
+python3 src/graph_tools/citygen_lsystem.py \
+  --population-data data/raw/gis/fayette_population.geojson \
+  --population-field population_density \
+  --hydro-data data/raw/gis/fayette_hydro.geojson \
+  --elevation-data data/raw/gis/fayette_dem.asc
+```
+
+#### Pure L-system road generation
+
+```bash
+python3 src/graph_tools/citygen_lsystem.py \
+  --pure-lsystem \
+  --population-data data/raw/gis/fayette_population.geojson \
+  --population-field population_density \
+  --hydro-data data/raw/gis/fayette_hydro.geojson \
+  --elevation-data data/raw/gis/fayette_dem.asc
+```
+
+Both write to:
+
+`data/raw/cityGen.txt`
+
+### Step 3. Lot Generation
+`src/lots/divison_lots.py`
+
+Reads `data/raw/cityGen.txt`, polygonizes enclosed road space, and writes:
+
+`data/processed/lots.json`
+
+### Step 4. Building Generation
+`src/pipeline/run_building_stage.py`
+
+Reads `data/processed/lots.json` and writes:
+
+`data/processed/buildings.json`
+
+### Step 5: Generate Geometry (PyVista preview)
 ```powershell
 python .\src\pipeline\run_geometry_stage.py
 ```
@@ -19,7 +101,7 @@ This renders the city with flat solid colors using PyVista. Useful for verifying
 
 Controls: R → reset camera, T → top-down view, I → isometric view
 
-### Step 3: Render with Texture Engine (Vispy/OpenGL)
+### Step 6: Render with Texture Engine (Vispy/OpenGL)
 ```powershell
 python .\src\pipeline\run_texture_stage.py
 ```
@@ -35,7 +117,7 @@ Controls:
 - T → top-down view
 - I → isometric view
 
-### Step 4: Demo Flythrough (optional)
+### Step 7: Demo Flythrough (optional)
 ```powershell
 python .\src\pipeline\run_demo_flythrough.py
 ```
